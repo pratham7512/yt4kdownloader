@@ -13,7 +13,7 @@ interface ProxyData {
 }
 
 async function getBestProxy() {
-  const response = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc');
+  const response = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=200&page=1&sort_by=lastChecked&sort_type=desc');
   const data = await response.json();
   
   // Filter for proxies with port 80, HTTPS protocol, high uptime, and elite anonymity
@@ -25,7 +25,6 @@ async function getBestProxy() {
       proxy.upTime > 90 && // Uptime threshold
       proxy.anonymityLevel === "elite" // Check for elite anonymity
     )
-    .sort((a, b) => b.speed - a.speed); // Sort by speed descending
 
   return proxies.length > 0 ? proxies[0] : null; // Return the best proxy or null
 }
