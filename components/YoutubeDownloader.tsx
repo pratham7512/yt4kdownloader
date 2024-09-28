@@ -140,7 +140,7 @@ export default function YouTubeDownloader() {
             </div>
 
             {error && (
-              <Alert variant="destructive" className="bg-red-900 border-red-800">
+              <Alert variant="destructive" className="bg-red-900 text-white">
                 <AlertCircle className="h-4 w-4" />
                 <AlertTitle>Error</AlertTitle>
                 <AlertDescription>{error}</AlertDescription>
