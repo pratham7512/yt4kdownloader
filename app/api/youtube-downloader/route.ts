@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ytdl from '@distube/ytdl-core';
+import ytdl from '@distube/ytdl-core'; // Import useProxy
+import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+
+// Assuming data has a specific structure, define its type
+interface ProxyData {
+  ip:string;
+  port: string;
+  speed: number;
+  protocols: string[]; // Add this line to include protocols
+}
+
+async function getBestProxy() {
+  const response = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc');
+  const data = await response.json();
+  
+  // Filter for proxies with port 80 and protocol check
+  const proxies = (data as { data: ProxyData[] }).data
+    .filter(proxy => proxy.port === "80" && proxy.protocols.includes('https')) // Check for protocol
+    .sort((a, b) => b.speed - a.speed); // Sort by speed descending
+
+  return proxies.length > 0 ? proxies[0] : null; // Return the best proxy or null
+}
+
+
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -20,7 +43,11 @@ async function getVideoInfo(url: string) {
   }
 
   try {
-    const info = await ytdl.getInfo(url);
+    const proxy = await getBestProxy();
+    console.log(proxy?.ip)
+    console.log(proxy?.protocols)
+    const agent = proxy ? ytdl.createProxyAgent({ uri: `https://${proxy.ip}:${proxy.port}` }) : undefined; // Changed null to undefined
+    const info = await ytdl.getInfo(url, { agent }); // Use dispatcher instead of agent
     const qualities = info.formats.map(format => ({
       itag: format.itag,
       qualityLabel: format.qualityLabel,
@@ -44,7 +71,9 @@ async function getDownloadLink(url: string, quality: string) {
   }
 
   try {
-    const info = await ytdl.getInfo(url);
+    const proxy = await getBestProxy();
+    const agent = proxy ? ytdl.createProxyAgent({ uri: `https://${proxy.ip}:${proxy.port}` }) : undefined;
+    const info = await ytdl.getInfo(url, {agent});
     const format = ytdl.chooseFormat(info.formats, { quality });
 
     if (!format) {
@@ -60,3 +89,4 @@ async function getDownloadLink(url: string, quality: string) {
     return NextResponse.json({ error: 'Failed to generate download link' }, { status: 500 });
   }
 }
+
