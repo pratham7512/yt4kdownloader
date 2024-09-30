@@ -1,58 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import ytdl from '@distube/ytdl-core'; // Import useProxy
-import fetch from 'node-fetch'; // Ensure you have node-fetch installed
+import ytdl from '@distube/ytdl-core';
 
-// Assuming data has a specific structure, define its type
-interface ProxyData {
-  ip:string;
-  port: string;
-  speed: number;
-  upTime: number; // Add this line
-  protocols: string[]; // Add this line to include protocols
-  anonymityLevel: string; // Add this line
+
+// Function to get the user's IP address
+async function getUserIpAddress(req: NextRequest): Promise<string | undefined> { // {{ edit_1 }}
+  const ip = req.headers.get('x-forwarded-for') || req.ip; // Get IP from headers or request
+  const ipArray = ip ? ip.split(',') : [];
+  const userIp = ipArray.length > 0 ? ipArray[0].trim() : undefined; // Get the first IP and trim whitespace
+  console.log(userIp);
+  return userIp; // Return the first IP if multiple are present
 }
 
-async function getBestProxy() {
-  const response = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=200&page=1&sort_by=lastChecked&sort_type=desc');
-  const data = await response.json();
-  
-  // Filter for proxies with port 80, HTTPS protocol, high uptime, and elite anonymity
-  const proxies = (data as { data: ProxyData[] }).data
-    .filter(proxy => 
-      proxy.port === "80" && 
-      proxy.protocols.includes('https') && 
-      proxy.speed > 1 && // Speed threshold
-      proxy.upTime > 90 && // Uptime threshold
-      proxy.anonymityLevel === "elite" // Check for elite anonymity
-    )
-
-  return proxies.length > 0 ? proxies[0] : null; // Return the best proxy or null
-}
-
-
-
+// Define the POST function
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const { action, url, quality } = body;
 
-  if (action === 'getInfo') {
-    return getVideoInfo(url);
-  } else if (action === 'getDownloadLink') {
-    return getDownloadLink(url, quality);
-  } else {
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+  // Handle different actions
+  switch (action) {
+    case 'getInfo':
+      return getVideoInfo(url,req);
+    case 'getDownloadLink':
+      return getDownloadLink(url, quality);
+    default:
+      return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   }
 }
 
-async function getVideoInfo(url: string) {
+// Function to get video information
+async function getVideoInfo(url: string, req: NextRequest) { // {{ edit_2 }}
   if (!url) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
+  const ipv6Block = '2001:2::/48';
+  
+  // Create an agent with a static IPv6 address
+  const agent = ytdl.createAgent(undefined, {
+    localAddress: await getUserIpAddress(req) || '0.0.0.0', // Fallback to a default IP if none found
+  });
+
   try {
-    const proxy = await getBestProxy();
-    const agent = proxy ? ytdl.createProxyAgent({ uri: `https://${proxy.ip}:${proxy.port}` }) : undefined; // Changed null to undefined
-    const info = await ytdl.getInfo(url, { agent }); // Use dispatcher instead of agent
+    const info = await ytdl.getInfo(url, { agent });
     const qualities = info.formats.map(format => ({
       itag: format.itag,
       qualityLabel: format.qualityLabel,
@@ -65,10 +54,11 @@ async function getVideoInfo(url: string) {
       qualities,
     });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     return NextResponse.json({ error: 'Failed to fetch video info' }, { status: 500 });
   }
 }
+
 
 async function getDownloadLink(url: string, quality: string) {
   if (!url || !quality) {
@@ -76,11 +66,8 @@ async function getDownloadLink(url: string, quality: string) {
   }
 
   try {
-    const proxy = await getBestProxy();
-    const agent = proxy ? ytdl.createProxyAgent({ uri: `https://${proxy.ip}:${proxy.port}` }) : undefined;
-    const info = await ytdl.getInfo(url, {agent});
+    const info = await ytdl.getInfo(url);
     const format = ytdl.chooseFormat(info.formats, { quality });
-
     if (!format) {
       return NextResponse.json({ error: 'Requested quality not available' }, { status: 404 });
     }
