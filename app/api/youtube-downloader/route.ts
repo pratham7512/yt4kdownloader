@@ -33,8 +33,6 @@ async function getVideoInfo(url: string, req: NextRequest) { // {{ edit_2 }}
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
-  const ipv6Block = '2001:2::/48';
-  
   // Create an agent with a static IPv6 address
   const agent = ytdl.createAgent(undefined, {
     localAddress: await getUserIpAddress(req) || '0.0.0.0', // Fallback to a default IP if none found
