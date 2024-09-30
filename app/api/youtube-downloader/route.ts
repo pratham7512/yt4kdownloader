@@ -7,8 +7,15 @@ async function getUserIpAddress(req: NextRequest): Promise<string | undefined> {
   const ip = req.headers.get('x-forwarded-for') || req.ip; // Get IP from headers or request
   const ipArray = ip ? ip.split(',') : [];
   const userIp = ipArray.length > 0 ? ipArray[0].trim() : undefined; // Get the first IP and trim whitespace
+
+  // Validate if the userIp is an IPv4 address
+  const ipv4Pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  if (userIp && ipv4Pattern.test(userIp)) {
+    console.log(userIp);
+    return userIp; // Return the first IPv4 address if valid
+  }
   console.log(userIp);
-  return userIp; // Return the first IP if multiple are present
+  return undefined; // Return undefined if no valid IPv4 address is found
 }
 
 // Define the POST function
