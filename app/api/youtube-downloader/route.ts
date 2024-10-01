@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
   // Handle different actions
   switch (action) {
     case 'getInfo':
-      return getVideoInfo(url,req);
+      return getVideoInfo(url);
     case 'getDownloadLink':
       return getDownloadLink(url, quality);
     default:
