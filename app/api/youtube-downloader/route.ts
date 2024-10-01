@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 }
 
 // Function to get video information
-async function getVideoInfo(url: string, req: NextRequest) { // {{ edit_2 }}
+async function getVideoInfo(url: string) { // {{ edit_2 }}
   if (!url) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
