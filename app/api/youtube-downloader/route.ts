@@ -4,18 +4,10 @@ import ytdl from '@distube/ytdl-core';
 
 // Function to get the user's IP address
 async function getUserIpAddress(req: NextRequest): Promise<string | undefined> { // {{ edit_1 }}
-  const ip = req.headers.get('x-forwarded-for') || req.ip; // Get IP from headers or request
-  const ipArray = ip ? ip.split(',') : [];
-  const userIp = ipArray.length > 0 ? ipArray[0].trim() : undefined; // Get the first IP and trim whitespace
-
-  // Validate if the userIp is an IPv4 address
-  const ipv4Pattern = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  if (userIp && ipv4Pattern.test(userIp)) {
-    console.log(userIp);
-    return userIp; // Return the first IPv4 address if valid
-  }
-  console.log(userIp);
-  return undefined; // Return undefined if no valid IPv4 address is found
+  const forwarded = req.headers.get('x-forwarded-for'); // Use .get() method
+  const ip = (typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.ip) || ''; // Use req.ip instead of req.socket.remoteAddress
+  console.log("this is fake" + ip); // Corrected variable name
+  return ip; // Return undefined if no valid IPv4 address is found
 }
 
 // Define the POST function
@@ -42,7 +34,7 @@ async function getVideoInfo(url: string, req: NextRequest) { // {{ edit_2 }}
 
   // Create an agent with a static IPv6 address
   const agent = ytdl.createAgent(undefined, {
-    localAddress: await getUserIpAddress(req) || '0.0.0.0', // Fallback to a default IP if none found
+    localAddress: '192.168.0.118', // Fallback to a default IP if none found
   });
 
   try {
