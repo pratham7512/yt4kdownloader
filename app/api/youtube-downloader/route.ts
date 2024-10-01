@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import ytdl from '@distube/ytdl-core';
 
 
-// Function to get the user's IP address
-async function getUserIpAddress(req: NextRequest): Promise<string | undefined> { // {{ edit_1 }}
-  const forwarded = req.headers.get('x-forwarded-for'); // Use .get() method
-  const ip = (typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.ip) || ''; // Use req.ip instead of req.socket.remoteAddress
-  console.log("this is fake" + ip); // Corrected variable name
-  return ip; // Return undefined if no valid IPv4 address is found
-}
+// // Function to get the user's IP address
+// async function getUserIpAddress(req: NextRequest): Promise<string | undefined> { // {{ edit_1 }}
+//   const forwarded = req.headers.get('x-forwarded-for'); // Use .get() method
+//   const ip = (typeof forwarded === 'string' ? forwarded.split(/, /)[0] : req.ip) || ''; // Use req.ip instead of req.socket.remoteAddress
+//   console.log("this is fake" + ip); // Corrected variable name
+//   return ip; // Return undefined if no valid IPv4 address is found
+// }
 
 // Define the POST function
 export async function POST(req: NextRequest) {
